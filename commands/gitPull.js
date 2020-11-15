@@ -1,4 +1,4 @@
-const git = require('nodegit');
+const git = require('simple-git');
 const fs = require('fs');
 
 const move = (fromPath, toPath, file) => fs.promises.copyFile(`${fromPath}/${file.name}`, `${toPath}/${file.name}`)
