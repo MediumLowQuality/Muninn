@@ -1,4 +1,4 @@
-const git = require('simple-git');
+const git = require('simple-git')().init();
 const fs = require('fs');
 
 const move = (fromPath, toPath, file) => fs.promises.copyFile(`${fromPath}/${file.name}`, `${toPath}/${file.name}`)
@@ -28,7 +28,7 @@ module.exports = {
 	clone() {
 		let dirName = __dirname.replace(/\\/g, '/');
 		dirName = dirName.substring(0, dirName.lastIndexOf('/'));
-		return git.Clone('https://github.com/MediumLowQuality/Muninn', 'repo')
+		return git.clone('https://github.com/MediumLowQuality/Muninn', 'repo')
 		.then(() => cloneDirectory('repo', dirName))
 		.then(() => Promise.all(['commands/_facts.txt', 'commands/_settings.txt'].map(path => fs.promises.unlink(path))))
 		.catch((e) => console.log('Clone failed. '+e));
