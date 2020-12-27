@@ -134,11 +134,24 @@ const supportedSettings = {
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
 			let {users, roles} = argsObject;
-			users = users.filter(user => !initialValue.includes(user)).map(id => `u${id}`);;
-			roles = roles.filter(role => !initialValue.includes(role)).map(id => `r${id}`);;
+			users = users.filter(user => !initialValue.includes(user)).map(id => `u${id}`);
+			roles = roles.filter(role => !initialValue.includes(role)).map(id => `r${id}`);
 			settings.botSupport = initialValue.concat([...users, ...roles]);
 		},
 		rejectChange: '`botSupport` must be set by a user with `moderator` or higher access. Settings not changed.'
+	},
+	'console': {
+		type: 'string',
+		help: 'The server\'s console channel for bots. If a value is set for this channel, commands that only work in channels named console will work in this channel instead.',
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, ADMIN, member),
+		set: (settings, argsObject, initialValue) => {
+			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
+			let {channels, others} = argsObject;
+			channels = channels.map(channel => channel.name.toLowerCase()).filter(name => !initialValue.includes(name));
+			others = others.map(channel => channel.toLowerCase()).filter(name => !initialValue.includes(name));
+			settings.console = initialValue.concat([...channels, ...others]);
+		},
+		rejectChange: '`console` can only be set by `serverAdmin` or server owner.'
 	},
 	'defaultName': {
 		type: 'string',
@@ -163,6 +176,15 @@ const supportedSettings = {
 		set: (settings, argsObject) => {
 			let enable = argsObject.others[0].toLowerCase().trim() !== 'false';
 			settings['facts enabled'] = enable;
+		}
+	},
+	'facts include global facts': {
+		type: 'bool',
+		help: 'Whether facts include all global facts, or only server-specific ones.',
+		allowedToSet(server, member, initialValue) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
+		set: (settings, argsObject) => {
+			let include = argsObject.others[0].toLowerCase().trim() !== 'false';
+			settings['facts include global facts'] = include;
 		}
 	},
 	'facts set access': {
@@ -301,6 +323,7 @@ module.exports = {
 					let settingType = settingDef.type;
 					origChannel.send(`New ${backtickWrap(setting)}: ${settings[setting].map(setting => settingToString(server, setting, settingType)).join(', ')}`);
 					writeSettings(server, origChannel);
+					if(setting === 'console') process.bot.console.set(server.id, settings.console);
 					return;
 				} else {
 					let rejectChange = settingDef.rejectChange || standardNoBotAccess;

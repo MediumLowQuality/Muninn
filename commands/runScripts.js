@@ -197,7 +197,7 @@ module.exports = {
 		const origChannel = msg.channel;
 		const server = origChannel.guild;
 		if(!server.available) return;
-		if(args.filter(str => str.length > 0).length === 0) return origChannel.send('You can use `$list` to check what scripts are available to you.');
+		if(args.filter(str => str.length > 0).length === 0) args = ['list'];
 		let scriptName = args.shift().toLowerCase();
 		if(scriptName in scripts) {
 			let script = scripts[scriptName];

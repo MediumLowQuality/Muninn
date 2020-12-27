@@ -17,6 +17,7 @@ function initializeBot(){
 	bot = new Discord.Client();
 	bot.commands = new Discord.Collection();
 	bot.commandAliases = [];
+	bot.console = new Discord.Collection();
 	Object.keys(botCommands).map(key => {
 		bot.commands.set(botCommands[key].name, botCommands[key]);
 		if(botCommands[key].alias !== undefined) bot.commandAliases.push(botCommands[key].alias);
@@ -73,10 +74,21 @@ function loggedIn(){
 			}
 		});
 	});
+	bot.guilds.keyArray().forEach(id => {
+		let consoleChannels = [];
+		if(process.serverSettings.has(id) && process.serverSettings.get(id).has('console')) {
+			let server = bot.guilds.fetch(id);
+			consoleChannels = process.serverSettings.get(id).get('console');
+		} else {
+			consoleChannels.push('console');
+		}
+		bot.console.set(id, consoleChannels);
+	});
 }
 
 function handleMessage(msg){
-	const chan = msg.channel.name;
+	const chan = msg.channel.name.toLowerCase();
+	const server = msg.guild.id;
 	const author = msg.author.id;
 	if(author === BOT) return;
 	if(!msg.content || msg.content === "") return;
@@ -101,8 +113,9 @@ function handleMessage(msg){
 	// for commands that need access to other commands
 	if (botCommand.metacommand) args.unshift(bot.commands);
 	//whitelists
-	if (botCommand.allowedChannels !== undefined && !botCommand.allowedChannels.includes(chan) && chan !== 'console'){
-		return;
+	if (botCommand.allowedChannels !== undefined && !bot.console.get(server).includes(chan)){
+		if(Array.isArray(botCommand.allowedChannels) && !botCommand.allowedChannels.includes(chan)) return;
+		if(!botCommand.allowedChannels(server, chan)) return;
 	}
 	if (botCommand.allowedUsers !== undefined && !process.isAdmin(author)){
 		let allowedUsers = botCommand.allowedUsers;
