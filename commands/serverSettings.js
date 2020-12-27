@@ -125,7 +125,7 @@ const supportedSettings = {
 			let {users, roles} = argsObject;
 			users = users.filter(user => !initialValue.includes(user)).map(id => `u${id}`);;
 			roles = roles.filter(role => !initialValue.includes(role)).map(id => `r${id}`);;
-			settings.moderator = initialValue.concat([...users, ...roles]);
+			settings.Moderator = initialValue.concat([...users, ...roles]);
 		},
 		rejectChange: '`moderator` can only be set by bot administrator, the server owner, or current server admin. Settings not changed.'
 	},
@@ -213,9 +213,10 @@ const supportedSettings = {
 	}
 };
 const settingsNames = Object.keys(supportedSettings);
-const flags = ['-help', '-list', '-init', '-replace'];
+const flags = ['-help', '-list', '-init', '-replace', '-clear'];
 
 function settingToString(server, setting, type){
+	if(Array.isArray(setting)) return setting.map(setting => settingToString(server, setting, type)).join(', ');
 	if(type === 'id') {
 		let dataType = setting.charAt(0);
 		setting = setting.substring(1);
@@ -262,8 +263,11 @@ module.exports = {
 			if(!hasSettings) message += '\r\nThis server has no settings yet. To initialize the admin and moderator to default values, use `munset -init`.';
 			return origChannel.send(message);
 		}
-		if(args[0].toLowerCase() === '-help') {
-			args.shift();
+		let commandFlags = [];
+		while(args.length > 0 && flags.includes(args[0].toLowerCase())){
+			commandFlags.push(args.shift().toLowerCase());
+		}
+		if(commandFlags.includes('-help')) {
 			if(args.length === 0){
 				let message = 'Valid syntax for this command is `munset [flags] <setting> [setting specific flags] <user or role>`. For example,';
 				message += `\r\nmunset Server Admin ${msg.member}\r\n`
@@ -275,20 +279,16 @@ module.exports = {
 				if(setting !== undefined) {
 					return origChannel.send(`${backtickWrap(setting)}: ${supportedSettings[setting].help}`);
 				}
+				return;
 			}
 		}
-		if(args[0].toLowerCase() === '-list') {
-			args.shift();
+		if(commandFlags.includes('-list')) {
 			if(args.length === 0){
 				let settingsList = settingsNames.map(setting => {
 					let message = `${backtickWrap(setting)}: ${supportedSettings[setting].help}`;
 					let type = supportedSettings[setting].type;
 					if(setting in settings) {
-						if(Array.isArray(settings[setting])) {
-							message += ' Value: ' + settings[setting].map(setting => settingToString(server, setting, type)).join(', ');
-						} else {
-							message += ' Value ' + settingToString(server, settings[setting], type);
-						}
+						message += ' Value ' + settingToString(server, settings[setting], type);
 					}
 					return message;
 				});
@@ -297,14 +297,14 @@ module.exports = {
 				return;
 			}
 		}
-		if(args[0].toLowerCase() === '-init') {
+		if(commandFlags.includes('-init') && args.length === 0) {
 			if(settings === undefined) {
 				settings = {};
 				process.serverSettings.set(server.id, settings);
 			}
 			settings['Server Admin'] = [`u${server.ownerID}`];
-			let moderator = server.roles.cache.find(role => role.name.toLowerCase() === 'moderator');
-			if(moderator !== null) settings.moderator = [`r${moderator}`];
+			let moderator = server.roles.cache.findKey(role => role.name.toLowerCase() === 'moderator');
+			if(moderator !== null) settings.Moderator = [`r${moderator}`];
 			writeSettings(server, origChannel);
 			return;
 		}
@@ -314,26 +314,22 @@ module.exports = {
 		}
 		setting = settingsNames.find(name => name.toLowerCase() === setting);
 		if(!setting) return origChannel.send('No matching setting found.');
-		if(args.length === 0 && setting !== undefined) {
-			let settingType = supportedSettings[setting].type;
-			return origChannel.send(`${backtickWrap(setting)}: ${settings[setting].map(setting => settingToString(server, setting, settingType)).join(', ')}`);
-		}
-		let replaceMode = args[0] === '-replace';
-		if(replaceMode) args.shift();
-		let initMode = args[0] === '-init';
-		if(initMode) args.shift();
 		if(setting !== undefined){
 			let settingDef = supportedSettings[setting];
+			let settingType = settingDef.type;
+			if(args.length === 0 && !commandFlags.includes('-init') && !commandFlags.includes('-clear')) {
+				return origChannel.send(`${backtickWrap(setting)}: ${settingToString(server, settings[setting], settingType)}`);
+			}
 			let member = msg.member;
 			if(settingDef.allowedToSet(server, member, settings[setting])){
-				let initialValue = replaceMode? undefined: settings[setting];
-				settingDef.set(settings, parseArgs(server, args), initialValue);
-				let settingType = settingDef.type;
-				if(Array.isArray(settings[setting])) {
-					origChannel.send(`New ${backtickWrap(setting)}: ${settings[setting].map(setting => settingToString(server, setting, settingType)).join(', ')}`);
-				} else {
-					origChannel.send(`New ${backtickWrap(setting)}: ${settingToString(server, settings[setting], settingType)}`);
+				if(commandFlags.includes('-clear')) {
+					let initialValue = settings[setting];
+					delete settings[setting];
+					return origChannel.send(`Setting ${backtickWrap(setting)} (${settingToString(server, settings[setting], settingType)}) cleared.`);
 				}
+				let initialValue = commandFlags.includes('-replace')? undefined: settings[setting];
+				settingDef.set(settings, parseArgs(server, args), initialValue);
+				origChannel.send(`New ${backtickWrap(setting)}: ${settingToString(server, settings[setting], settingType)}`);
 				writeSettings(server, origChannel);
 				if(setting === 'console') process.bot.console.set(server.id, settings.console);
 				return;
