@@ -8,7 +8,25 @@ const flags = {
 module.exports = {
 	name: 'factdef',
 	description: 'Defines facts for factlookup command.',
-	/*allowedUsers: ['362250920786132993', '293146019238117376', '120006979686105088', '288092789311537153', '158423194284457984', '332649893409849349', '162729606145638400'],*/
+	allowedChannels: (server, channel) => {
+		if(process.serverSettings.has(server)) {
+			let settings = process.serverSettings.get(server);
+			if(settings['facts enabled'] === undefined) return true;
+			return settings['facts enabled'];
+		}
+		return true;
+	},
+	allowedUsers: (args, msg, groups) => {
+		let server = msg.guild.id;
+		if(process.serverSettings.has(server)) {
+			let settings = process.serverSettings.get(server);
+			let level = settings['facts set access'];
+			if(level === undefined || level === -1) return true;
+			let userLevel = process.getSecurityLevel(msg.member);
+			return userLevel >= 0 && userLevel < level;
+		}
+		return true;
+	},
 	alias(command, args, msg) {
 		if(command.startsWith('!')){
 			if(args.map(arg => arg.toLowerCase()).includes('is')) {
@@ -24,7 +42,7 @@ module.exports = {
 				args.unshift(key);
 				if(override) args.unshift('-override');
 				command = 'factdef';
-			} else if(command === '!-delete'){
+			} else if(command === '!delete'){
 				command = 'factdef';
 				args.unshift('-delete');
 			} else {

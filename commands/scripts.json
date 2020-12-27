@@ -31,7 +31,7 @@
 	{
 		"name": "resetservername",
 		"level": 3,
-		"body": "const server = msg.guild; let defaultName = settings.defaultName; if (defaultName) server.setName(defaultName[0]).then(() => msg.channel.send(`Changed server name to ${defaultName}.`)).catch(e => process.log(e));",
+		"body": "const server = msg.guild; let defaultName = settings['default name']; if (defaultName) server.setName(defaultName[0]).then(() => msg.channel.send(`Changed server name to ${defaultName}.`)).catch(e => process.log(e));",
 		"help": "If the server has a default name defined in its settings, the server name is reverted to that. Otherwise, does nothing."
 	},
 	{

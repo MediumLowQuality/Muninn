@@ -4,6 +4,25 @@ const threeBackticks = backtick + backtick + backtick;
 module.exports = {
 	name: 'factlookup',
 	description: 'Looks up facts. Also triggered by !<fact key>. Send just ! to list all the available facts.',
+	allowedChannels: (server, channel) => {
+		if(process.serverSettings.has(server)) {
+			let settings = process.serverSettings.get(server);
+			if(settings['facts enabled'] === undefined) return true;
+			return settings['facts enabled'];
+		}
+		return true;
+	},
+	allowedUsers: (args, msg, groups) => {
+		let server = msg.guild.id;
+		if(process.serverSettings.has(server)) {
+			let settings = process.serverSettings.get(server);
+			let level = settings['facts get access'];
+			if(level === undefined || level === -1) return true;
+			let userLevel = process.getSecurityLevel(msg.member);
+			return userLevel >= 0 && userLevel < level;
+		}
+		return true;
+	},
 	cooldown: 1000,
 	execute(msg, args) {
 		const origChannel = msg.channel;

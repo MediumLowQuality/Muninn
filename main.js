@@ -80,7 +80,7 @@ function loggedIn(){
 			let server = bot.guilds.fetch(id);
 			consoleChannels = process.serverSettings.get(id).console;
 		} else {
-			consoleChannels.push('console');
+			consoleChannels = ['console'];
 		}
 		bot.console.set(id, consoleChannels);
 	});
@@ -115,7 +115,9 @@ function handleMessage(msg){
 	//whitelists
 	if (botCommand.allowedChannels !== undefined && !bot.console.get(server).includes(chan)){
 		if(Array.isArray(botCommand.allowedChannels) && !botCommand.allowedChannels.includes(chan)) return;
-		if(!botCommand.allowedChannels(server, chan)) return;
+		if(!botCommand.allowedChannels(server, chan)) {
+			return;
+		}
 	}
 	if (botCommand.allowedUsers !== undefined && !process.isAdmin(author)){
 		let allowedUsers = botCommand.allowedUsers;

@@ -4,6 +4,7 @@ const requires = Object.fromEntries(Object.keys(require('./scriptRequirements'))
 const argDef = (level) => `msg,args${level >= 0 && level <= 3? ',settings': ''}${level === 0? ',requires': ''}`; //level 0 scripts can have access to other modules
 let rawScriptsArray = require('./scripts');
 const gitPull = require('./gitPull');
+const access = settings.groups.accessDescriptors
 
 let scripts = {
 	'new': {
@@ -95,8 +96,6 @@ let scripts = {
 				requestLevel = securityLevels.findIndex(func => func(msg.member));
 			}
 			let scriptNames = Object.keys(scripts);
-			let access = ['VictorF only', 'server admin only', 'moderators only', 'users with bot access'];
-			access.push('any user');
 			let scriptsList = scriptNames
 				.filter(name => scripts[name].level === -1 || scripts[name].level >= requestLevel)
 				.sort((a, b) => scripts[a].level - scripts[b].level)
