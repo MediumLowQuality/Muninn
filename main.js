@@ -74,11 +74,11 @@ function loggedIn(){
 			}
 		});
 	});
-	bot.guilds.keyArray().forEach(id => {
+	bot.guilds.cache.keyArray().forEach(id => {
 		let consoleChannels = [];
-		if(process.serverSettings.has(id) && process.serverSettings.get(id).has('console')) {
+		if(process.serverSettings.has(id) && process.serverSettings.get(id).console) {
 			let server = bot.guilds.fetch(id);
-			consoleChannels = process.serverSettings.get(id).get('console');
+			consoleChannels = process.serverSettings.get(id).console;
 		} else {
 			consoleChannels.push('console');
 		}

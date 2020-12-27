@@ -47,7 +47,7 @@ function parseArgs(server, args){
 		}
 		return arg;
 	}).filter(arg => arg !== 0);
-	return {users, roles, channels, others};
+	return {server, users, roles, channels, others};
 }
 function isMemberInGroup(keys, member){
 	let server = member.guild;
@@ -146,8 +146,8 @@ const supportedSettings = {
 		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, ADMIN, member),
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
-			let {channels, others} = argsObject;
-			channels = channels.map(channel => channel.name.toLowerCase()).filter(name => !initialValue.includes(name));
+			let {server, channels, others} = argsObject;
+			channels = channels.map(channel => server.channels.cache.get(channel).name.toLowerCase()).filter(name => !initialValue.includes(name));
 			others = others.map(channel => channel.toLowerCase()).filter(name => !initialValue.includes(name));
 			settings.console = initialValue.concat([...channels, ...others]);
 		},
@@ -181,7 +181,7 @@ const supportedSettings = {
 	'facts include global facts': {
 		type: 'bool',
 		help: 'Whether facts include all global facts, or only server-specific ones.',
-		allowedToSet(server, member, initialValue) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
 		set: (settings, argsObject) => {
 			let include = argsObject.others[0].toLowerCase().trim() !== 'false';
 			settings['facts include global facts'] = include;
