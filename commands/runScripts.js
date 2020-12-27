@@ -181,6 +181,7 @@ const securityLevels = [ // ascending security
 	(member) => settings.groups.isAllowedToSet(member.guild, settings.groups.MODERATORS, member), //moderators+ only
 	(member) => settings.groups.isAllowedToSet(member.guild, settings.groups.HAS_BOT_ACCESS, member) //all users with bot access
 ];
+process.getSecurityLevel = (member) => securityLevels.findIndex(test => test(member));
 
 module.exports = {
 	name: 'munscript',
@@ -210,5 +211,5 @@ module.exports = {
 				origChannel.send('You do not have access to that script.');
 			}
 		}
-	},
+	}
 };

@@ -71,6 +71,11 @@ const HAS_BOT_ACCESS = ['serverAdmin', 'moderator', 'botSupport'];
 function isAllowedToSet(server, allowedGroup, member){
 	return (process.isAdmin(member.id) || server.ownerID === member.id || isMemberInGroup(allowedGroup, member));
 }
+function standardAccessIsAllowedToSet(server, member, initialValue){ //anyone with access can set this value, unless the access has been set higher than theirs.
+	return isAllowedToSet(server, ADMIN, member)
+		|| (isAllowedToSet(server, MODERATORS, member) && initialValue === 2)
+		|| (isAllowedToSet(server, HAS_BOT_ACCESS, member) && (initialValue === -1 || initialValue === undefined || initialValue <= 3));
+}
 
 const standardNoBotAccess = 'You do not have access to editing server settings.'
 
@@ -99,7 +104,7 @@ const supportedSettings = {
 	'serverAdmin': {
 		type: 'id',
 		help: 'Has full access to server on the bot.',
-		allowedToSet: (server, member) => isAllowedToSet(server, ADMIN, member),
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, ADMIN, member),
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
 			let {users, roles} = argsObject;
@@ -112,7 +117,7 @@ const supportedSettings = {
 	'moderator': {
 		type: 'id',
 		help: 'Can set server settings and use moderation commands on the bot.',
-		allowedToSet: (server, member) => isAllowedToSet(server, ADMIN, member),
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, ADMIN, member),
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
 			let {users, roles} = argsObject;
@@ -125,7 +130,7 @@ const supportedSettings = {
 	'botSupport': {
 		type: 'id',
 		help: 'For users who run the bot but do not have moderation access.',
-		allowedToSet: (server, member) => isAllowedToSet(server, MODERATORS, member),
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, MODERATORS, member),
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
 			let {users, roles} = argsObject;
@@ -138,24 +143,53 @@ const supportedSettings = {
 	'defaultName': {
 		type: 'string',
 		help: 'The server\'s usual name. Used to reset the server name and generate server branded embeds. Recommended to set with server name in double quotes.',
-		allowedToSet: (server, member) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
 		set: (settings, argsObject) => {
 			settings.defaultName = [argsObject.others[0]];
-		},
-		rejectChange: standardNoBotAccess
+		}
 	},
 	'defaultColor': {
 		type: 'color',
 		help: 'The server\'s color. Used to generate server branded embeds.',
-		allowedToSet: (server, member) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
 		set: (settings, argsObject) => {
-			settings.defaultColor = [argsObject.others[0]];
-		},
-		rejectChange: standardNoBotAccess
+			settings.defaultColor = argsObject.others[0];
+		}
+	},
+	'facts enabled': {
+		type: 'bool',
+		help: 'Whether or not Muninn will respond to fact commands on this server. All values that do not begin with the word false will be interpreted as true.',
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, HAS_BOT_ACCESS, member),
+		set: (settings, argsObject) => {
+			let enable = argsObject.others[0].toLowerCase().trim() !== 'false';
+			settings['facts enabled'] = enable;
+		}
+	},
+	'facts set access': {
+		type: 'access',
+		help: 'What degree of bot access is required to set facts on Muninn.\r\n Set -1 for all users, 0 for server admin only, 1 for moderators, and 2 for any user given bot access.',
+		allowedToSet: standardAccessIsAllowedToSet,
+		set: (settings, argsObject, initialValue) => {
+			let num = parseInt(argsObject[0]);
+			if(num >= 0) num += 1;//0 is victor only
+			if(num > 3) num = -1;
+			settings['facts set access'] = num;
+		}
+	},
+	'facts get access': {
+		type: 'access',
+		help: 'What degree of bot access is required to retrieve facts. Values are same as set.',
+		allowedToSet: standardAccessIsAllowedToSet,
+		set: (settings, argsObject, initialValue) => {
+			let num = parseInt(argsObject[0]);
+			if(num >= 0) num += 1;
+			if(num > 3) num = -1;
+			settings['facts get access'] = num;
+		}
 	}
 };
 const settingsNames = Object.keys(supportedSettings);
-const flags = ['-help', '-list', '-init'];
+const flags = ['-help', '-list', '-init', '-replace'];
 
 function settingToString(server, setting, type){
 	if(type === 'id') {
@@ -204,7 +238,7 @@ module.exports = {
 		if(args[0].toLowerCase() === '-help') {
 			args.shift();
 			if(args.length === 0){
-				let message = 'Valid syntax for this command is `munset [flags] <setting> <user or role>`. For example,';
+				let message = 'Valid syntax for this command is `munset [flags] <setting> [setting specific flags] <user or role>`. For example,';
 				message += `\r\nmunset serverAdmin ${msg.member}\r\n`
 				message += 'This command supports several additional flags.\r\n`-init` will automatically make the server owner the serverAdmin and fill moderator with a role named moderator, if there is one. Other settings will not be given a default value.';
 				return origChannel.send(message);
@@ -222,7 +256,13 @@ module.exports = {
 				let settingsList = settingsNames.map(setting => {
 					let message = `${backtickWrap(setting)}: ${supportedSettings[setting].help}`;
 					let type = supportedSettings[setting].type;
-					if(setting in settings) message += ' Value: ' + settings[setting].map(setting => settingToString(server, setting, type)).join(', ');
+					if(setting in settings) {
+						if(Array.isArray(settings[setting])) {
+							message += ' Value: ' + settings[setting].map(setting => settingToString(server, setting, type)).join(', ');
+						} else {
+							message += ' Value ' + settingToString(server, settings[setting], type);
+						}
+					}
 					return message;
 				});
 				let message = settingsList.join('\r\n');
@@ -248,17 +288,23 @@ module.exports = {
 				let settingType = supportedSettings[setting].type;
 				return origChannel.send(`${backtickWrap(setting)}: ${settings[setting].map(setting => settingToString(server, setting, settingType)).join(', ')}`);
 			}
+			let replaceMode = args[0] === '-replace';
+			if(replaceMode) args.shift();
+			let initMode = args[0] === '-init';
+			if(initMode) args.shift();
 			if(setting !== undefined){
 				let settingDef = supportedSettings[setting];
 				let member = msg.member;
-				if(settingDef.allowedToSet(server, member)){
-					settingDef.set(settings, parseArgs(server, args));
+				if(settingDef.allowedToSet(server, member, settings[setting])){
+					let initialValue = replaceMode? undefined: settings[setting];
+					settingDef.set(settings, parseArgs(server, args), initialValue);
 					let settingType = settingDef.type;
 					origChannel.send(`New ${backtickWrap(setting)}: ${settings[setting].map(setting => settingToString(server, setting, settingType)).join(', ')}`);
 					writeSettings(server, origChannel);
 					return;
 				} else {
-					origChannel.send(settingDef.rejectChange);
+					let rejectChange = settingDef.rejectChange || standardNoBotAccess;
+					origChannel.send(rejectChange);
 					return;
 				}
 			}

@@ -86,6 +86,7 @@ function handleMessage(msg){
 		.flat().filter(s => s !== "")//condense nested arrays to one array and remove empty strings
 		.map(arg => arg.replace(/\\"/, '"'));//replace \" with "
 	let command = args.shift().toLowerCase();
+	if(args[0].startsWith('?') && !args[0].toLowerCase().endsWith(process.env.WHO.toLowerCase())) return; //filter out commands by bot name
 	
 	//some messages can trigger the bot to run a command in non-standard ways
 	[command, args] = bot.commandAliases.reduce((commandArgs, alias) => alias(...commandArgs), [command, args, msg]);
@@ -107,7 +108,7 @@ function handleMessage(msg){
 			return;
 		}
 	}
-	process.log(`${msg.author.tag} called command in ${msg.guild.name.replace(/\s/g, '-')}/${msg.channel.name}:\r\n ${command}${args.length > 0? ' with args "' + args.join(' ') + '"' :''}`);
+	process.log(`(${process.env.WHO}) ${msg.author.tag} called command in ${msg.guild.name.replace(/\s/g, '-')}/${msg.channel.name}:\r\n ${command}${args.length > 0? ' with args "' + args.join(' ') + '"' :''}`);
 	//cooldown handling - NEEDS TO BE SERVER SPECIFIC
 	if(botCommand.cooldown !== undefined) {
 		let now = Date.now();
