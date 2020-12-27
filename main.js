@@ -46,10 +46,30 @@ function loggedIn(){
 		process.bot.guilds.fetch(key).then((server) => {
 			console.log(`${server.name} cached.`);
 			if(users.length > 0){
-				server.members.fetch({user: users}).then(() => console.log(`Members from ${server.name} cached.`));
+				users.map(userId => {
+					server.members.fetch(userId)
+					.then((member) => console.log(`Cached ${member.displayName} from ${server.name}.`))
+					.catch(error => {
+						process.log(`Settings error: user ${id} not found in ${server.name}. Removing from settings.`);
+						ids.filter(id => id in settingsObj).forEach(setting => {
+							settingsObj[setting] = settingsObj[setting].filter(id => !id.endsWith(userId));
+						});
+					});
+				});
 			}
 			if(roles.length > 0){
-				server.roles.fetch().then(() => console.log(`Roles from ${server.name} cached.`));
+				server.roles.fetch().then(() => {
+					console.log(`Roles from ${server.name} cached.`);
+					let unfoundRoles = roles.filter(role => !server.roles.cache.has(role));
+					if(unfoundRoles.length > 0){
+						process.log(`Settings error: role${(unfoundRoles.length > 1?'s ':' ') + unfoundRoles.join(', ')} not found. Removing from settings.`);
+						unfoundRoles.forEach(roleId => {
+							ids.filter(id => id in settingsObj).forEach(setting => {
+								settingsObj[setting] = settingsObj[setting].filter(id => !id.endsWith(roleId));
+							});
+						});
+					}
+				});
 			}
 		});
 	});
