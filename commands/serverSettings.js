@@ -325,6 +325,7 @@ module.exports = {
 				if(commandFlags.includes('-clear')) {
 					let initialValue = settings[setting];
 					delete settings[setting];
+					writeSettings(server, origChannel);
 					return origChannel.send(`Setting ${backtickWrap(setting)} (${settingToString(server, settings[setting], settingType)}) cleared.`);
 				}
 				let initialValue = commandFlags.includes('-replace')? undefined: settings[setting];
