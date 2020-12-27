@@ -60,6 +60,9 @@ typings/
 # next.js build output
 .next
 
+# Batch files
+Muninn.bat
+
 # archives created by Muninn
 Muninn.7z
 facts.7z
@@ -69,3 +72,4 @@ facts/
 settings/
 commands/_facts.txt
 commands/_settings.txt
+
