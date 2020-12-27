@@ -85,8 +85,13 @@ function handleMessage(msg){
 		.map((chunk, index) => index % 2 === 0? chunk.split(/ +/): chunk)//return quoted phrases as is, split others around spaces
 		.flat().filter(s => s !== "")//condense nested arrays to one array and remove empty strings
 		.map(arg => arg.replace(/\\"/, '"'));//replace \" with "
+	if(args[0].startsWith('?')) {
+		if(!args[0].toLowerCase().endsWith(process.env.WHO.toLowerCase())){
+			return; //filter out commands by bot name
+		} else args.shift();
+	}
 	let command = args.shift().toLowerCase();
-	if(args[0].startsWith('?') && !args[0].toLowerCase().endsWith(process.env.WHO.toLowerCase())) return; //filter out commands by bot name
+	
 	
 	//some messages can trigger the bot to run a command in non-standard ways
 	[command, args] = bot.commandAliases.reduce((commandArgs, alias) => alias(...commandArgs), [command, args, msg]);
