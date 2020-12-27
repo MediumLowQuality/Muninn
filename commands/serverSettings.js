@@ -116,8 +116,8 @@ const supportedSettings = {
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
 			let {users, roles} = argsObject;
-			users = users.filter(user => !initialValue.includes(user));
-			roles = roles.filter(role => !initialValue.includes(role));
+			users = users.filter(user => !initialValue.includes(user)).map(id => `u${id}`);;
+			roles = roles.filter(role => !initialValue.includes(role)).map(id => `r${id}`);;
 			settings.moderator = initialValue.concat([...users, ...roles]);
 		},
 		rejectChange: '`moderator` can only be set by bot administrator, the server owner, or current server admin. Settings not changed.'
@@ -129,8 +129,8 @@ const supportedSettings = {
 		set: (settings, argsObject, initialValue) => {
 			if(initialValue === undefined || !Array.isArray(initialValue)) initialValue = [];
 			let {users, roles} = argsObject;
-			users = users.filter(user => !initialValue.includes(user));
-			roles = roles.filter(role => !initialValue.includes(role));
+			users = users.filter(user => !initialValue.includes(user)).map(id => `u${id}`);;
+			roles = roles.filter(role => !initialValue.includes(role)).map(id => `r${id}`);;
 			settings.botSupport = initialValue.concat([...users, ...roles]);
 		},
 		rejectChange: '`botSupport` must be set by a user with `moderator` or higher access. Settings not changed.'
@@ -168,7 +168,7 @@ function settingToString(server, setting, type){
 			default: return setting;
 		}
 	} else if(type === 'color') {
-		return `#${setting}`
+		return `#${setting}`;
 	}
 	return setting;
 }
@@ -180,6 +180,9 @@ function writeSettings(server, logChannel){
 	fs.promises.writeFile(`${__dirname}/settings/${server.id}.json`, JSON.stringify(settings, null, '\t'), 'utf8').then(() => logChannel.send('Settings saved.')).catch(() => logChannel.send('Settings failed to save.'));
 }
 
+process.serverSettings.settings = Object.fromEntries(
+	Object.keys(supportedSettings).map(name => [name, supportedSettings[name].type])
+);
 module.exports = {
 	name: 'munset',
 	description: 'Set Muninn\'s server specific variables with this command. Use `munset -help` for more information.',
@@ -189,6 +192,8 @@ module.exports = {
 		const origChannel = msg.channel;
 		const server = origChannel.guild;
 		if(!server.available) return;
+		server.members.fetch();
+		server.roles.fetch();
 		let hasSettings = process.serverSettings.has(server.id);
 		let settings = hasSettings? process.serverSettings.get(server.id) : {};
 		if(args.length === 0){

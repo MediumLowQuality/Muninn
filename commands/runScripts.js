@@ -86,20 +86,29 @@ let scripts = {
 		level: -1,
 		exec(msg, args) {
 			const origChannel = msg.channel;
+			let requestLevel = 0;
+			if(args.length > 0 && parseInt(args[0]) !== undefined) {
+				requestLevel = parseInt(args[0]);
+				requestLevel = requestLevel < 0? 0: requestLevel;
+				if(requestLevel > securityLevels.length) requestLevel = securityLevels.findIndex(func => func(msg.member));
+			} else {
+				requestLevel = securityLevels.findIndex(func => func(msg.member));
+			}
 			let scriptNames = Object.keys(scripts);
+			let access = ['VictorF only', 'server admin only', 'moderators only', 'users with bot access'];
+			access.push('any user');
 			let scriptsList = scriptNames
+				.filter(name => scripts[name].level === -1 || scripts[name].level >= requestLevel)
 				.sort((a, b) => scripts[a].level - scripts[b].level)
 				.map(scriptName => {
 					let script = scripts[scriptName];
 					let level = script.level;
 					level = level < 0? securityLevels.length: level;
 					level = level >= securityLevels.length? securityLevels.length: level;
-					let access = ['VictorF only', 'server admin only', 'moderators only', 'users with bot access'];
-					access.push('any user');
 					let message = '`$' + scriptName + '`' + `: Restricted to ${access[level]}.${script.help? ' '+script.help:''}`;
 					return message;
 				}).join('\r\n');
-			let message = `The following scripts are defined:\r\n${scriptsList}`;
+			let message = `The following scripts are available${requestLevel !== 0?' for ' + access[requestLevel].replace(' only', ''):''}:\r\n${scriptsList}`;
 			origChannel.send(message);
 		},
 		help: 'Displays a list of all scripts Muninn has available.'
@@ -108,7 +117,7 @@ let scripts = {
 		level: 0,
 		exec(msg, args, settings, requires) {
 			if(args.length === 0) {
-				origChannel.send('Dumping supports `facts` and `settings`.');
+				msg.channel.send('Dumping supports `facts` and `settings`.');
 				return;
 			}
 			const origChannel = msg.channel;
@@ -136,8 +145,12 @@ let scripts = {
 					).then(() => requires.fs.promises.unlink(`${dirs.bot}/${target}.7z`))
 					.catch((e) => process.log(e));
 				});
+			} else if (target === 'scripts') {
+				origChannel.send(`This is the current set of ${target}.`, 
+					{files: [ `${dirs.commandDir}/scripts.json`]}
+				).catch((e) => process.log(e));
 			} else {
-				origChannel.send('Dumping only supports `facts` and `settings` at this time.');
+				origChannel.send('Dumping only supports `facts`, `settings`, and `scripts` at this time.');
 			}
 		},
 		help: 'Dump is used to transfer files created and changed by Muninn that are not included in Muninn\'s Github repo.'

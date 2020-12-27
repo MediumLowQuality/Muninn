@@ -32,6 +32,27 @@ function loggedIn(){
 		process.log = (str) => logChannel.send(typeof str === 'string'? str: util.format(str))
 		.catch(error => console.log(`${str} failed to send.\r\n${error}`));
 	});
+	let settings = process.serverSettings.settings,
+	ids = Object.keys(settings).filter(setting => settings[setting] === 'id');
+	process.serverSettings.map((settingsObj, key) => {
+		let idsToCache = ids.filter(id => id in settingsObj)
+			.map(id => settingsObj[id]).flat(),
+			users = idsToCache.filter(id => id.startsWith('u'))
+				.map(id => id.substring(1)),
+			roles = idsToCache.filter(id => id.startsWith('r'))
+				.map(id => id.substring(1)),
+			channels = idsToCache.filter(id => id.startsWith('c'))
+				.map(id => id.substring(1));
+		process.bot.guilds.fetch(key).then((server) => {
+			console.log(`${server.name} cached.`);
+			if(users.length > 0){
+				server.members.fetch({user: users}).then(() => console.log(`Members from ${server.name} cached.`));
+			}
+			if(roles.length > 0){
+				server.roles.fetch().then(() => console.log(`Roles from ${server.name} cached.`));
+			}
+		});
+	});
 }
 
 function handleMessage(msg){
@@ -66,7 +87,7 @@ function handleMessage(msg){
 			return;
 		}
 	}
-	process.log(`${msg.author.tag} called command: ${command}${args.length > 0? ' with args "' + args.join(' ') + '"' :''}`);
+	process.log(`${msg.author.tag} called command in ${msg.guild.name.replace(/\s/g, '-')}/${msg.channel.name}:\r\n ${command}${args.length > 0? ' with args "' + args.join(' ') + '"' :''}`);
 	//cooldown handling - NEEDS TO BE SERVER SPECIFIC
 	if(botCommand.cooldown !== undefined) {
 		let now = Date.now();
