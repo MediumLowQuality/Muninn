@@ -15,8 +15,10 @@ module.exports = {
 		origChannel.messages.fetch({limit: 100}).then(messages => {
 			let deletableMessages = messages.filter(message => {
 				if(message.author.bot) return true;
-				if(message.content.startsWith('!') || message.content.startsWith('$') || message.content.startsWith('<@!718870675921698836>') || message.content.startsWith('<@718870675921698836>') || message.content.toLowerCase().startsWith('munclear')) return true;
-				let command = message.content.split(/ +/).shift().toLowerCase();
+				let messageText = message.content;
+				if(messageText.startsWith('?') && messageText.indexOf(' ') + 1 < messageText.length) messageText = messageText.substring(messageText.indexOf(' ') + 1);
+				if(messageText.startsWith('!') || messageText.startsWith('$') || messageText.startsWith('<@!718870675921698836>') || messageText.startsWith('<@718870675921698836>') || messageText.toLowerCase().startsWith('munclear')) return true;
+				let command = messageText.split(/ +/).shift().toLowerCase();
 				return commands.has(command);
 			});
 			origChannel.bulkDelete(deletableMessages, true).catch(process.log);
