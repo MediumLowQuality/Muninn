@@ -66,8 +66,8 @@ function isMemberInGroup(keys, member){
 const backtickWrap = (str) => '`'+str+'`';
 //commonly used groups in allowedToSet
 const ADMIN = 'Server Admin';
-const MODERATORS = ['Server Admin', 'moderator'];
-const HAS_BOT_ACCESS = ['Server Admin', 'moderator', 'Bot Support'];
+const MODERATORS = ['Server Admin', 'Moderator'];
+const HAS_BOT_ACCESS = ['Server Admin', 'Moderator', 'Bot Support'];
 const accessDescriptors = ['VictorF only', 'server admin only', 'moderators only', 'users with bot access'];
 accessDescriptors.push('any user');
 function isAllowedToSet(server, allowedGroup, member){
