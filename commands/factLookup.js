@@ -33,7 +33,7 @@ module.exports = {
 		function handleFact(facts){
 			let fact = undefined, json = false, joinedArgs = args.join(' ').toLowerCase();
 			if(args[0] === '') {
-				fact = 'There are facts defined for the following keys: ' + Object.keys(facts).join(', ') + '.';
+				fact = 'There are facts defined for the following keys: ' + Object.keys(facts).sort().join(', ') + '.';
 			} else if(args[0] === '-json') {
 				json = true;
 				args.shift();
