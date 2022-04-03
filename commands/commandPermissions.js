@@ -4,6 +4,7 @@ function commandAllowedInChannel(command, server, channel){
 	let {allowedChannels} = command;
 	if(allowedChannels === undefined) return true;
 	channel = channel.toLowerCase();
+	if(isConsoleChannel(server, channel)) return true;
 	if(typeof allowedChannels === 'string') return allowedChannels.toLowerCase() === channel;
 	if(Array.isArray(allowedChannels)) return allowedChannels.includes(channel);
 	if(typeof allowedChannels === 'function') return allowedChannels(server, channel);
@@ -20,7 +21,14 @@ function commandAllowedByUser(command, user, args, msg){
 	return false;
 }
 
+function isConsoleChannel(server, channel){
+	channel = channel.toLowerCase();
+	if(channel === 'console') return true;
+	return process.bot.console.has(server) && process.bot.console.get(server).includes(channel);
+}
+
 module.exports = {
 	commandAllowedInChannel,
-	commandAllowedByUser
+	commandAllowedByUser,
+	isConsoleChannel
 };
