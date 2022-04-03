@@ -210,7 +210,16 @@ const supportedSettings = {
 			if(num > 3) num = -1;
 			settings['facts get access'] = num;
 		}
-	}
+	},
+	'ColorMe enabled': {
+		type: 'bool',
+		help: 'Whether Muninn will respond to the $ColorMe script on this server. All values that do not begin with the word false will be interpreted as true.',
+		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, MODERATORS, member),
+		set: (settings, argsObject) => {
+			let enable = argsObject.others[0].toLowerCase().trim() !== 'false';
+			settings['ColorMe enabled'] = enable;
+		}
+	},
 };
 const settingsNames = Object.keys(supportedSettings);
 const flags = ['-help', '-list', '-init', '-replace', '-clear'];

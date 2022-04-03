@@ -4,7 +4,7 @@ const requires = Object.fromEntries(Object.keys(require('./scriptRequirements'))
 const argDef = (level) => `msg,args${level >= 0 && level <= 3? ',settings': ''}${level === 0? ',requires': ''}`; //level 0 scripts can have access to other modules
 let rawScriptsArray = require('./scripts');
 const gitPull = require('./gitPull');
-const access = settings.groups.accessDescriptors
+const access = settings.groups.accessDescriptors;
 
 let scripts = {
 	'new': {
@@ -87,6 +87,7 @@ let scripts = {
 		level: -1,
 		exec(msg, args) {
 			const origChannel = msg.channel;
+			const server = msg.guild;
 			let requestLevel = 0;
 			if(args.length > 0 && parseInt(args[0]) !== undefined) {
 				requestLevel = parseInt(args[0]);
@@ -97,7 +98,8 @@ let scripts = {
 			}
 			let scriptNames = Object.keys(scripts);
 			let scriptsList = scriptNames
-				.filter(name => scripts[name].level === -1 || scripts[name].level >= requestLevel)
+				.filter(name => (scripts[name].level === -1 || scripts[name].level >= requestLevel)
+					&& (scripts[name].enabled === undefined || scripts[name].enabled(server)))
 				.sort((a, b) => scripts[a].level - scripts[b].level)
 				.map(scriptName => {
 					let script = scripts[scriptName];
@@ -114,9 +116,10 @@ let scripts = {
 	},
 	dump: {
 		level: 0,
+		enabled: () => true,
 		exec(msg, args, settings, requires) {
 			if(args.length === 0) {
-				msg.channel.send('Dumping supports `facts` and `settings`.');
+				msg.channel.send('Dumping supports `facts`, `settings`, and `scripts`.');
 				return;
 			}
 			const origChannel = msg.channel;
@@ -168,11 +171,13 @@ let scripts = {
 };
 rawScriptsArray.forEach(script => {
 	let name = script.name.toLowerCase();
+	let setting = script.setting;
 	scripts[name] = {
 		level: script.level !== undefined ? script.level: -1,
 		exec: new Function(argDef(script.level), script.body)
 	};
 	if(script.help) scripts[name].help = script.help;
+	if(script.setting) scripts[name].enabled = (server) => process.serverSettings.has(server) && process.serverSettings.get(server)[setting];
 });
 const securityLevels = [ // ascending security
 	(member) => process.isAdmin(member.id), //bot admin only

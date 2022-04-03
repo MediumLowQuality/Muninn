@@ -36,8 +36,9 @@
 	},
 	{
 		"name": "colorme",
+		"setting": "ColorMe enabled",
 		"level": -1,
-		"body": "if(args.length === 0) return msg.reply('You need to include a color.'); let color = args[0].replace('#', '').toUpperCase(); try{color = parseInt(color, 16);} catch (e) {return msg.reply('Your color does not resolve. Try a hex color code.')} let member = msg.member, server = msg.guild, name = member.displayName, position = member.roles.highest.position + 1; let roles = server.roles.cache; let role = roles.find(role => role.name === name); if(!role){server.roles.create({data:{name, permissions: 0, color, hoist: false, mentionable: false, position}}).then(role => member.roles.add(role));} else {role.setColor(color);}",
+		"body": "if(!process.serverSettings.get(msg.guild.id)['ColorMe enabled']) return msg.reply('ColorMe is disabled on this server.'); if(args.length === 0) return msg.reply('You need to include a color.'); let color = args[0].replace('#', '').toUpperCase(); try{color = parseInt(color, 16);} catch (e) {return msg.reply('Your color does not resolve. Try a hex color code.')} let member = msg.member, server = msg.guild, name = member.displayName, position = member.roles.highest.position + 1; let roles = server.roles.cache; let role = roles.find(role => role.name === name); if(!role){server.roles.create({data:{name, permissions: 0, color, hoist: false, mentionable: false, position}}).then(role => member.roles.add(role));} else {role.setColor(color);}",
 		"help": "Creates a role named after the user with no extra permissions, with the specified color. If such a role exists, recolors it."
 	}
 ]
