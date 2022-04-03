@@ -1,6 +1,7 @@
 require('dotenv').config();
 const Discord = require('discord.js');
 const botCommands = require('./commands');
+const {commandAllowedInChannel, commandAllowedByUser} = require('./commands/commandPermissions');
 const util = require('util');
 const ADMIN = process.env.ADMIN;
 const AUXADMIN = process.env.AUXADMIN;
@@ -8,7 +9,6 @@ const BOT = process.env.BOT;
 const baseServer = process.env.BASESERVER;
 const munLog = process.env.LOGCHANNEL;
 let bot = undefined;
-let groups = undefined;
 process.isAdmin = (id) => (id === process.env.ADMIN || id === process.env.AUXADMIN);
 
 function initializeBot(){
@@ -26,7 +26,6 @@ function initializeBot(){
 }
 
 function loggedIn(){
-	groups = bot.commands.get('munset').groups;
 	console.info(`Logged in as ${bot.user.tag}!`);
 	bot.guilds.fetch(baseServer).then(server => {
 		const logChannel = server.channels.resolve(munLog);
@@ -113,21 +112,8 @@ function handleMessage(msg){
 	// for commands that need access to other commands
 	if (botCommand.metacommand) args.unshift(bot.commands);
 	//whitelists
-	if (botCommand.allowedChannels !== undefined && !bot.console.get(server).includes(chan)){
-		if(Array.isArray(botCommand.allowedChannels) && !botCommand.allowedChannels.includes(chan)) return;
-		if(!botCommand.allowedChannels(server, chan)) {
-			return;
-		}
-	}
-	if (botCommand.allowedUsers !== undefined && !process.isAdmin(author)){
-		let allowedUsers = botCommand.allowedUsers;
-		if(Array.isArray(allowedUsers) && !allowedUsers.includes(author)){
-			return;
-		}
-		if(typeof allowedUsers === 'function' && !allowedUsers(args, msg, groups)){
-			return;
-		}
-	}
+	if(!commandAllowedInChannel(botCommand, server, chan) 
+		|| !commandAllowedByUser(botCommand, author, args, msg)) return;
 	process.log(`(${process.env.WHO}) ${msg.author.tag} called command in ${msg.guild.name.replace(/\s/g, '-')}/${msg.channel.name}:\r\n ${command}${args.length > 0? ' with args "' + args.join(' ') + '"' :''}`);
 	//cooldown handling - NEEDS TO BE SERVER SPECIFIC
 	if(botCommand.cooldown !== undefined) {

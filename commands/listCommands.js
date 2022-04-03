@@ -1,3 +1,5 @@
+const {commandAllowedInChannel, commandAllowedByUser} = require('./commandPermissions');
+
 module.exports = {
 	name: 'listcommands',
 	description: 'Lists what commands this user has access to. Also triggered by pinging the bot.',
@@ -14,11 +16,8 @@ module.exports = {
 		if(!server.available) return;
 		const author = msg.member, authorID = msg.member.id;
 		let munComms = Array.from(commands.keys());
-		const groups = commands.get('munset').groups;
-		let messageContents = commands.filter(comm => {
-			let allowedUsers = comm.allowedUsers;
-			return (allowedUsers === undefined || (Array.isArray(allowedUsers) && allowedUsers.includes(authorID)) || (typeof allowedUsers === 'function' && allowedUsers(args, msg, groups)) || process.isAdmin(author.id));
-		}).map(comm => `${comm.name}: ${comm.description}${comm.allowedChannels? ' Allowed in ' + comm.allowedChannels.join(', ') + '.':''}`).join('\r\n');
-		origChannel.send(`${author}, you have access to the following commands:\r\n${messageContents}`)
+		let messageContents = commands.filter(comm => commandAllowedByUser(comm, author, args, msg))
+		.map(comm => `${comm.name}: ${comm.description}${comm.allowedChannels && Array.isArray(comm.allowedChannels)? ' Allowed in ' + comm.allowedChannels.join(', ') + '.':''}`).join('\r\n');
+		origChannel.send(`${author}, you have access to the following commands:\r\n${messageContents}`);
 	},
 };
