@@ -9,7 +9,7 @@ module.exports = {
 	MunScript: require('./runScripts'),
 	FactLookup: require('./factLookup'),
 	FactDef: require('./factDef'),
-	SpitFax: require('./discordObjectDefine'),
+	/*SpitFax: require('./discordObjectDefine'), why does this exist*/
 	/*Raffle: require('./raffle'), temporarily discontinued*/
 	/*NotABug: require('./notABug'), discontinued*/
 	/*DontPingSimon: require('./dontPingSimon'), discontinued*/
