@@ -213,7 +213,7 @@ const supportedSettings = {
 	},
 	'ColorMe enabled': {
 		type: 'bool',
-		help: 'Whether Muninn will respond to the $ColorMe script on this server. All values that do not begin with the word false will be interpreted as true.',
+		help: 'Whether Muninn will respond to the $ColorMe script on this server, which creates a colored role for that user. All values that do not begin with the word false will be interpreted as true.',
 		allowedToSet: (server, member, initialValue) => isAllowedToSet(server, MODERATORS, member),
 		set: (settings, argsObject) => {
 			let enable = argsObject.others[0].toLowerCase().trim() !== 'false';
