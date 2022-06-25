@@ -1,5 +1,6 @@
 require('dotenv').config();
 const Discord = require('discord.js');
+const init = require('./init');
 const botCommands = require('./commands');
 const {commandAllowedInChannel, commandAllowedByUser} = require('./commands/commandPermissions');
 const util = require('util');
@@ -14,7 +15,7 @@ process.isAdmin = (id) => (id === process.env.ADMIN || id === process.env.AUXADM
 function initializeBot(){
 	if(bot !== undefined) return bot;
 	
-	bot = new Discord.Client();
+	bot = new Discord.Client({intents: init.intents});
 	bot.commands = new Discord.Collection();
 	bot.commandAliases = [];
 	bot.console = new Discord.Collection();
@@ -73,7 +74,7 @@ function loggedIn(){
 			}
 		});
 	});
-	bot.guilds.cache.keyArray().forEach(id => {
+	[...bot.guilds.cache.keys()].forEach(id => {
 		let consoleChannels = [];
 		if(process.serverSettings.has(id) && process.serverSettings.get(id).console) {
 			let server = bot.guilds.fetch(id);
