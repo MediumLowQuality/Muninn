@@ -79,7 +79,7 @@ function standardAccessIsAllowedToSet(server, member, initialValue){ //anyone wi
 		|| (isAllowedToSet(server, HAS_BOT_ACCESS, member) && (initialValue === -1 || initialValue === undefined || initialValue <= 3));
 }
 
-const standardNoBotAccess = 'You do not have access to editing server settings.'
+const standardNoBotAccess = 'You do not have access to editing server settings.';
 
 process.serverSettings = new Discord.Collection();
 let settingsFiles = fs.promises.readdir('./commands/settings', {encoding: 'utf8', withFileTypes: true})

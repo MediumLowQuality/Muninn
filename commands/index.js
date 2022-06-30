@@ -13,5 +13,5 @@ module.exports = {
 	/*Raffle: require('./raffle'), temporarily discontinued*/
 	/*NotABug: require('./notABug'), discontinued*/
 	/*DontPingSimon: require('./dontPingSimon'), discontinued*/
-	
+	QFeature: require('./ECFeature')
 };
