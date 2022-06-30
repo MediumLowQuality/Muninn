@@ -82,7 +82,7 @@ module.exports = {
 		let op = args.shift().toLowerCase();
 		if(op === 'start'){
 			if(args.length === 0) return origChannel.send('You must include a name for the feature.');
-			let key = args.join().toLowerCase();
+			let key = args.join(' ').toLowerCase();
 			if(key in features){
 				activeKey = key;
 				activeFeature = features[key];
